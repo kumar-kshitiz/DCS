@@ -1,7 +1,0 @@
-C:\DCS\RemoteFileManagement.Shared\bin\Debug\RemoteFileManagement.Shared.dll
-C:\DCS\RemoteFileManagement.Shared\bin\Debug\RemoteFileManagement.Shared.pdb
-C:\DCS\RemoteFileManagement.Shared\obj\Debug\RemoteFileManagement.Shared.dll
-C:\DCS\RemoteFileManagement.Shared\obj\Debug\RemoteFileManagement.Shared.pdb
-C:\DCS\RemoteFileManagement.Shared\bin\WebDebug\RemoteFileManagement.Shared.dll
-C:\DCS\RemoteFileManagement.Shared\bin\WebDebug\RemoteFileManagement.Shared.pdb
-C:\DCS\RemoteFileManagement.Shared\obj\Debug\RemoteFileManagement.Shared.csprojResolveAssemblyReference.cache

@@ -1,9 +1,0 @@
-C:\DCS\RemoteFileManagement.Client\bin\Release\Web\index.html
-C:\DCS\RemoteFileManagement.Client\bin\Release\Client.config
-C:\DCS\RemoteFileManagement.Client\bin\Release\RemoteFileManagement.Client.exe
-C:\DCS\RemoteFileManagement.Client\bin\Release\RemoteFileManagement.Client.pdb
-C:\DCS\RemoteFileManagement.Client\bin\Release\RemoteFileManagement.Shared.dll
-C:\DCS\RemoteFileManagement.Client\bin\Release\RemoteFileManagement.Shared.pdb
-C:\DCS\RemoteFileManagement.Client\obj\Release\RemoteFileManagement.Client.csprojResolveAssemblyReference.cache
-C:\DCS\RemoteFileManagement.Client\obj\Release\RemoteFileManagement.Client.exe
-C:\DCS\RemoteFileManagement.Client\obj\Release\RemoteFileManagement.Client.pdb

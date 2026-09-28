@@ -1,0 +1,22 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Runtime data and logs
+Storage/
+*.log
+*.zip
+
+# Browser/test artifacts
+Tests/BrowserCheck/
+Tests/Run-*/
+
+# Local secrets and machine-specific configuration
+*.local.config
+.env
+.env.*

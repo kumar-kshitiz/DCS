@@ -209,11 +209,7 @@ For same-machine testing:
 - Use localhost or 127.0.0.1.
 - Default port is 9090.
 
-Example login accounts:
-
-- alice / alice123
-- bob / bob123
-- charlie / charlie123
+Create an account through the client registration screen before logging in. Passwords are chosen by the user and are never committed to the repository.
 
 ## Two-Machine Testing
 
@@ -253,13 +249,11 @@ Windows Firewall must allow incoming TCP traffic on port 9090.
 
 ### Register a user
 
-- Username: alice
-- Password: alice123
+- Choose a username and password in the client registration screen.
 
 ### Login
 
-- User: alice
-- Password: alice123
+- Use the account created during registration.
 
 ### Upload file
 

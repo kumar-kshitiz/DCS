@@ -41,11 +41,8 @@ namespace RemoteFileManagement.Server.Services
         private static readonly Dictionary<string, string> UserSalt = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, string> Sessions = new Dictionary<string, string>();
 
-        private AuthService(bool seed) { }
-
         public AuthService()
         {
-            EnsureSeedUsers();
         }
 
         private OperationResult RegisterCore(string username, string password, string displayName)
@@ -222,21 +219,6 @@ namespace RemoteFileManagement.Server.Services
                 if (token == null || !Sessions.TryGetValue(token, out owner) ||
                     !string.Equals(owner, username, StringComparison.OrdinalIgnoreCase))
                     throw new UnauthorizedAccessException("Session is not authenticated.");
-            }
-        }
-
-        private static void EnsureSeedUsers()
-        {
-            lock (SyncRoot)
-            {
-                if (UserPasswords.Count > 0)
-                {
-                    return;
-                }
-
-                new AuthService(false).Register("alice", "alice123", "Alice Johnson");
-                new AuthService(false).Register("bob", "bob123", "Bob Smith");
-                new AuthService(false).Register("charlie", "charlie123", "Charlie Brown");
             }
         }
 

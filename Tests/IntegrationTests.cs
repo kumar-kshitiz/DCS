@@ -101,11 +101,14 @@ public static class IntegrationTests
             bool denied = false;
             try { new Browser(webPort).Get("/api/list"); } catch (WebException ex) { denied = ((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.Unauthorized; }
             Check(denied, "Anonymous web request must be denied.");
-            Ok(a.Post("/api/register", new { username = "tester", password = "test123", displayName = "Test User" }), "register");
-            Check(!(bool)a.Post("/api/register", new { username = "tester", password = "test123" })["Success"], "Duplicate registration must fail.");
-            Ok(a.Post("/api/login", new { username = "tester", password = "test123" }), "login");
-            Ok(a2.Post("/api/login", new { username = "tester", password = "test123" }), "second same-account login");
-            Ok(b.Post("/api/login", new { username = "bob", password = "bob123" }), "distinct-account login");
+            var testerPassword = Guid.NewGuid().ToString("N");
+            var bobPassword = Guid.NewGuid().ToString("N");
+            Ok(a.Post("/api/register", new { username = "tester", password = testerPassword, displayName = "Test User" }), "register");
+            Ok(a.Post("/api/register", new { username = "bob", password = bobPassword, displayName = "Bob Test" }), "second user register");
+            Check(!(bool)a.Post("/api/register", new { username = "tester", password = testerPassword })["Success"], "Duplicate registration must fail.");
+            Ok(a.Post("/api/login", new { username = "tester", password = testerPassword }), "login");
+            Ok(a2.Post("/api/login", new { username = "tester", password = testerPassword }), "second same-account login");
+            Ok(b.Post("/api/login", new { username = "bob", password = bobPassword }), "distinct-account login");
             Check(Convert.ToInt32(Item(a.Get("/api/server-info")["info"])["ActiveClientCount"]) == 3, "Count clients rather than distinct usernames.");
             Ok(a.Post("/api/create-directory", new { path = "docs" }), "create directory");
             var folderWrite = a.Post("/api/text?path=docs", new { content = "invalid", append = false });
@@ -159,9 +162,10 @@ public static class IntegrationTests
             Task.WaitAll(Enumerable.Range(0, 24).Select(i => Task.Factory.StartNew(() =>
                 Ok((i % 2 == 0 ? a : a2).Post("/api/text?path=append.txt", new { content = "x", append = true }), "parallel append"))).ToArray());
             Check((string)a.Get("/api/text?path=append.txt")["content"] == new string('x', 24), "Concurrent appends lose no content.");
-            Ok(a.Post("/api/change-password", new { oldPassword = "test123", newPassword = "changed123" }), "password change");
+            var changedPassword = Guid.NewGuid().ToString("N");
+            Ok(a.Post("/api/change-password", new { oldPassword = testerPassword, newPassword = changedPassword }), "password change");
             bool badLogin = false;
-            try { new Browser(webPort).Post("/api/login", new { username = "tester", password = "test123" }); }
+            try { new Browser(webPort).Post("/api/login", new { username = "tester", password = testerPassword }); }
             catch (WebException) { badLogin = true; }
             Check(badLogin, "Old password fails.");
             Ok(a.Get("/api/logout"), "logout one client");
@@ -170,7 +174,7 @@ public static class IntegrationTests
             denied = false;
             try { a.Get("/api/list"); } catch (WebException) { denied = true; }
             Check(denied, "Logged-out cookie cannot access web API.");
-            Ok(a.Post("/api/login", new { username = "tester", password = "changed123" }), "new password login");
+            Ok(a.Post("/api/login", new { username = "tester", password = changedPassword }), "new password login");
             Ok(a.Post("/api/delete", new { path = "renamed.txt", directory = false }), "delete file");
             Ok(a.Post("/api/delete", new { path = "parallel", directory = true }), "recursive delete");
             Check(!(bool)a.Post("/api/delete", new { path = "/", directory = true })["Success"], "Root deletion is denied.");
