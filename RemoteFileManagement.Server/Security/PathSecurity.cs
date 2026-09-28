@@ -5,9 +5,22 @@ namespace RemoteFileManagement.Server.Security
 {
     public static class PathSecurity
     {
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, object> OperationLocks =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+        public static object GetOperationLock(string username) { return OperationLocks.GetOrAdd(username, _ => new object()); }
+
+        public static bool IsWithin(string root, string path)
+        {
+            root = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            path = Path.GetFullPath(path);
+            return string.Equals(root, path, StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string GetUserRoot(string username)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || !System.Linq.Enumerable.All(username, ch => char.IsLetterOrDigit(ch) || ch == '_' || ch == '-'))
             {
                 throw new ArgumentException("Username is required.");
             }
@@ -22,7 +35,7 @@ namespace RemoteFileManagement.Server.Security
             var userRoot = GetUserRoot(username);
             var rootFull = Path.GetFullPath(userRoot);
 
-            if (string.IsNullOrWhiteSpace(relativePath))
+            if (string.IsNullOrWhiteSpace(relativePath) || relativePath == "/" || relativePath == "\\")
             {
                 return rootFull;
             }
@@ -41,11 +54,14 @@ namespace RemoteFileManagement.Server.Security
             }
 
             var path = Path.GetFullPath(Path.Combine(userRoot, safePath));
-            if (!path.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
+            if (!IsWithin(rootFull, path))
             {
                 throw new UnauthorizedAccessException("The requested path is outside your storage area.");
             }
 
+            var segments = safePath.Split(Path.DirectorySeparatorChar);
+            if (Array.Exists(segments, part => !IsValidFileName(part)))
+                throw new ArgumentException("Invalid path component.");
             return path;
         }
 

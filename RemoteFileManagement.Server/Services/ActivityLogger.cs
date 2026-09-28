@@ -8,6 +8,7 @@ namespace RemoteFileManagement.Server.Services
 {
     public static class ActivityLogger
     {
+        private static readonly object SyncRoot = new object();
         public static string LogFilePath
         {
             get
@@ -19,9 +20,14 @@ namespace RemoteFileManagement.Server.Services
         public static void Log(string username, string operation, string target, string status)
         {
             var line = string.Format("[{0}] User: {1} Operation: {2} Target: {3} Status: {4}",
-                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), username, operation, target, status);
+                DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), Clean(username), Clean(operation), Clean(target), Clean(status));
 
-            File.AppendAllText(LogFilePath, line + Environment.NewLine);
+            lock (SyncRoot)
+            {
+                Console.WriteLine(line);
+                try { File.AppendAllText(LogFilePath, line + Environment.NewLine); }
+                catch (Exception ex) { Console.Error.WriteLine("Activity log write failed: " + ex.Message); }
+            }
         }
 
         public static ActivityLogDto[] GetRecentLogs(string username, int count)
@@ -33,7 +39,7 @@ namespace RemoteFileManagement.Server.Services
                     return new ActivityLogDto[0];
                 }
 
-                var lines = File.ReadAllLines(LogFilePath);
+                string[] lines; lock (SyncRoot) { lines = File.ReadAllLines(LogFilePath); }
                 var results = new List<ActivityLogDto>();
 
                 foreach (var line in lines.Reverse())
@@ -43,13 +49,8 @@ namespace RemoteFileManagement.Server.Services
                         continue;
                     }
 
-                    if (username != null && username.Trim().Length > 0 && !line.Contains("User: " + username))
-                    {
-                        continue;
-                    }
-
                     var entry = ParseLine(line);
-                    if (entry != null)
+                    if (entry != null && (string.IsNullOrWhiteSpace(username) || string.Equals(entry.Username, username.Trim(), StringComparison.OrdinalIgnoreCase)))
                     {
                         results.Add(entry);
                     }
@@ -65,6 +66,42 @@ namespace RemoteFileManagement.Server.Services
             catch
             {
                 return new ActivityLogDto[0];
+            }
+        }
+
+        private static string Clean(string value)
+        {
+            return (value ?? "").Replace("\r", "\\r").Replace("\n", "\\n")
+                .Replace("Operation: ", "Operation\\: ").Replace("Target: ", "Target\\: ").Replace("Status: ", "Status\\: ");
+        }
+
+        public static T Execute<T>(string username, string operation, string target, Func<T> action, T failure, bool authorize)
+        {
+            try
+            {
+                T result;
+                if (authorize)
+                {
+                    AuthService.ValidateSession(username);
+                    lock (RemoteFileManagement.Server.Security.PathSecurity.GetOperationLock(username))
+                    {
+                        AuthService.ValidateSession(username);
+                        result = action();
+                    }
+                }
+                else result = action();
+                var outcome = (object)result as OperationResult;
+                var user = (object)result as UserDto;
+                var success = outcome != null ? outcome.Success : user != null ? user.IsAuthenticated :
+                    (object)result != null;
+                Log(username, operation, target, success ? "SUCCESS" : "FAILURE" + (outcome == null ? "" : ": " + outcome.Message));
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log(username, operation, target, "FAILURE: " + ex.Message);
+                if (typeof(T) == typeof(OperationResult)) return (T)(object)OperationResult.Fail(ex.Message);
+                return failure;
             }
         }
 

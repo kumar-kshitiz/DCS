@@ -1,0 +1,8 @@
+C:\DCS\RemoteFileManagement.Server\bin\Release\Server.config
+C:\DCS\RemoteFileManagement.Server\bin\Release\RemoteFileManagement.Server.exe
+C:\DCS\RemoteFileManagement.Server\bin\Release\RemoteFileManagement.Server.pdb
+C:\DCS\RemoteFileManagement.Server\bin\Release\RemoteFileManagement.Shared.dll
+C:\DCS\RemoteFileManagement.Server\bin\Release\RemoteFileManagement.Shared.pdb
+C:\DCS\RemoteFileManagement.Server\obj\Release\RemoteFileManagement.Server.csprojResolveAssemblyReference.cache
+C:\DCS\RemoteFileManagement.Server\obj\Release\RemoteFileManagement.Server.exe
+C:\DCS\RemoteFileManagement.Server\obj\Release\RemoteFileManagement.Server.pdb

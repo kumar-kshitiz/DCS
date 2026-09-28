@@ -26,7 +26,7 @@ namespace RemoteFileManagement.Client.Services
             ServerPort = serverPort;
 
             var channelName = "ClientChannel" + Guid.NewGuid().ToString("N");
-            _channel = new TcpChannel();
+            _channel = new TcpChannel(new System.Collections.Hashtable { { "name", channelName } }, null, null);
             ChannelServices.RegisterChannel(_channel, false);
 
             var url = "tcp://" + serverHost + ":" + serverPort + "/";
@@ -39,7 +39,9 @@ namespace RemoteFileManagement.Client.Services
 
         public UserDto Login(string username, string password)
         {
-            return _authService.Login(username, password);
+            var user = _authService.Login(username, password);
+            System.Runtime.Remoting.Messaging.CallContext.LogicalSetData("SessionToken", user.SessionToken);
+            return user;
         }
 
         public OperationResult Register(string username, string password, string displayName)

@@ -35,14 +35,22 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.Configuration" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RemoteFileManagement.Shared\RemoteFileManagement.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Services\RemotingClient.cs" />
+    <Compile Include="Services\WebHost.cs" />
     <Compile Include="UI\ConsoleUI.cs" />
     <Compile Include="Program.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Web\index.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="Client.config">

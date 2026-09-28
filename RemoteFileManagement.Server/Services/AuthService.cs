@@ -12,18 +12,48 @@ namespace RemoteFileManagement.Server.Services
 {
     public class AuthService : MarshalByRefObject, IAuthService
     {
+        public override object InitializeLifetimeService() { return null; }
+
+        public OperationResult Register(string username, string password, string displayName)
+        {
+            return ActivityLogger.Execute<OperationResult>(username, "REGISTER", username, () => RegisterCore(username, password, displayName), OperationResult.Fail("Operation failed."), false);
+        }
+
+        public UserDto Login(string username, string password)
+        {
+            return ActivityLogger.Execute<UserDto>(username, "LOGIN", username, () => LoginCore(username, password), new UserDto { IsAuthenticated = false }, false);
+        }
+
+        public OperationResult ChangePassword(string username, string oldPassword, string newPassword)
+        {
+            return ActivityLogger.Execute<OperationResult>(username, "CHANGE_PASSWORD", username, () => ChangePasswordCore(username, oldPassword, newPassword), OperationResult.Fail("Operation failed."), false);
+        }
+
+        public OperationResult Logout(string username)
+        {
+            return ActivityLogger.Execute<OperationResult>(username, "LOGOUT", username, () => LogoutCore(username), OperationResult.Fail("Operation failed."), false);
+        }
+
+
         private static readonly object SyncRoot = new object();
         private static readonly Dictionary<string, string> UserPasswords = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, string> UserDisplayNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, string> UserSalt = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private static readonly HashSet<string> LoggedInUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> Sessions = new Dictionary<string, string>();
+
+        private AuthService(bool seed) { }
 
         public AuthService()
         {
             EnsureSeedUsers();
         }
 
-        public OperationResult Register(string username, string password, string displayName)
+        private OperationResult RegisterCore(string username, string password, string displayName)
+        {
+            return RegisterUser(username, password, displayName);
+        }
+
+        private static OperationResult RegisterUser(string username, string password, string displayName)
         {
             try
             {
@@ -45,16 +75,14 @@ namespace RemoteFileManagement.Server.Services
                         return OperationResult.Fail("User already exists.");
                     }
 
+                    PathSecurity.GetUserRoot(username);
                     var salt = CreateSalt();
                     var hash = HashPassword(password, salt);
                     UserPasswords[username] = hash;
                     UserSalt[username] = salt;
                     UserDisplayNames[username] = string.IsNullOrWhiteSpace(displayName) ? username : displayName.Trim();
 
-                    var root = PathSecurity.GetUserRoot(username);
-                    Directory.CreateDirectory(root);
 
-                    ActivityLogger.Log(username, "REGISTER", username, "SUCCESS");
                     return OperationResult.Ok("Registration successful.");
                 }
             }
@@ -64,7 +92,7 @@ namespace RemoteFileManagement.Server.Services
             }
         }
 
-        public UserDto Login(string username, string password)
+        private UserDto LoginCore(string username, string password)
         {
             try
             {
@@ -78,25 +106,24 @@ namespace RemoteFileManagement.Server.Services
                 {
                     if (!UserPasswords.ContainsKey(username))
                     {
-                        ActivityLogger.Log(username, "LOGIN", username, "FAILURE");
                         return new UserDto { IsAuthenticated = false };
                     }
 
                     var hash = HashPassword(password, UserSalt[username]);
                     if (!string.Equals(hash, UserPasswords[username], StringComparison.Ordinal))
                     {
-                        ActivityLogger.Log(username, "LOGIN", username, "FAILURE");
                         return new UserDto { IsAuthenticated = false };
                     }
 
-                    LoggedInUsers.Add(username);
+                    var token = Guid.NewGuid().ToString("N");
+                    Sessions[token] = username;
                     var displayName = UserDisplayNames.ContainsKey(username) ? UserDisplayNames[username] : username;
-                    ActivityLogger.Log(username, "LOGIN", username, "SUCCESS");
 
                     return new UserDto
                     {
                         Username = username,
                         DisplayName = displayName,
+                        SessionToken = token,
                         IsAuthenticated = true
                     };
                 }
@@ -107,7 +134,7 @@ namespace RemoteFileManagement.Server.Services
             }
         }
 
-        public OperationResult ChangePassword(string username, string oldPassword, string newPassword)
+        private OperationResult ChangePasswordCore(string username, string oldPassword, string newPassword)
         {
             try
             {
@@ -135,7 +162,6 @@ namespace RemoteFileManagement.Server.Services
                     }
 
                     UserPasswords[username] = HashPassword(newPassword, UserSalt[username]);
-                    ActivityLogger.Log(username, "CHANGE_PASSWORD", username, "SUCCESS");
                     return OperationResult.Ok("Password changed successfully.");
                 }
             }
@@ -145,7 +171,7 @@ namespace RemoteFileManagement.Server.Services
             }
         }
 
-        public OperationResult Logout(string username)
+        private OperationResult LogoutCore(string username)
         {
             try
             {
@@ -156,8 +182,12 @@ namespace RemoteFileManagement.Server.Services
 
                 lock (SyncRoot)
                 {
-                    LoggedInUsers.Remove(username);
-                    ActivityLogger.Log(username, "LOGOUT", username, "SUCCESS");
+                    var token = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData("SessionToken") as string;
+                    string owner;
+                    if (token == null || !Sessions.TryGetValue(token, out owner) ||
+                        !string.Equals(owner, username, StringComparison.OrdinalIgnoreCase))
+                        return OperationResult.Fail("Session is not authenticated.");
+                    Sessions.Remove(token);
                     return OperationResult.Ok("Logout successful.");
                 }
             }
@@ -179,7 +209,19 @@ namespace RemoteFileManagement.Server.Services
         {
             lock (SyncRoot)
             {
-                return LoggedInUsers.Count;
+                return Sessions.Count;
+            }
+        }
+
+        public static void ValidateSession(string username)
+        {
+            var token = System.Runtime.Remoting.Messaging.CallContext.LogicalGetData("SessionToken") as string;
+            lock (SyncRoot)
+            {
+                string owner;
+                if (token == null || !Sessions.TryGetValue(token, out owner) ||
+                    !string.Equals(owner, username, StringComparison.OrdinalIgnoreCase))
+                    throw new UnauthorizedAccessException("Session is not authenticated.");
             }
         }
 
@@ -192,9 +234,9 @@ namespace RemoteFileManagement.Server.Services
                     return;
                 }
 
-                Register("alice", "alice123", "Alice Johnson");
-                Register("bob", "bob123", "Bob Smith");
-                Register("charlie", "charlie123", "Charlie Brown");
+                new AuthService(false).Register("alice", "alice123", "Alice Johnson");
+                new AuthService(false).Register("bob", "bob123", "Bob Smith");
+                new AuthService(false).Register("charlie", "charlie123", "Charlie Brown");
             }
         }
 

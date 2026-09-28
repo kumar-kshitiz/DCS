@@ -191,6 +191,7 @@ namespace RemoteFileManagement.Client.UI
                         Logout();
                         return;
                     case "17":
+                        Logout();
                         Environment.Exit(0);
                         return;
                     default:
@@ -227,7 +228,7 @@ namespace RemoteFileManagement.Client.UI
             var destination = Console.ReadLine();
 
             var data = _client.DownloadFile(_currentUser, remotePath);
-            if (data == null || data.Length == 0)
+            if (data == null)
             {
                 Console.WriteLine("Download failed or file not found.");
                 Console.ReadKey();

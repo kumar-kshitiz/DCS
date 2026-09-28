@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Xml;
 using RemoteFileManagement.Client.Services;
-using RemoteFileManagement.Client.UI;
 
 namespace RemoteFileManagement.Client
 {
@@ -23,9 +22,12 @@ namespace RemoteFileManagement.Client
                 var port = portNode != null ? int.Parse(portNode.Attributes["value"].Value) : 9090;
 
                 Console.WriteLine("Connecting to server: tcp://" + host + ":" + port);
+                var webPortNode = doc.SelectSingleNode("/configuration/appSettings/add[@key='WebPort']");
+                var webPort = webPortNode != null ? int.Parse(webPortNode.Attributes["value"].Value) : 8080;
                 var client = new RemotingClient(host, port);
-                var ui = new ConsoleUI(client);
-                ui.Run();
+                if (args.Length > 0) webPort = int.Parse(args[0]);
+                var webHost = new WebHost(client, webPort);
+                webHost.Run();
             }
             catch (Exception ex)
             {

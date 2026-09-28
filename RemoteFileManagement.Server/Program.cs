@@ -45,6 +45,9 @@ namespace RemoteFileManagement.Server
                     "SystemService",
                     WellKnownObjectMode.Singleton);
 
+                new AuthService();
+                ActivityLogger.Log("SERVER", "START", ServerSettings.Port.ToString(), "SUCCESS");
+                Console.CancelKeyPress += (sender, e) => ActivityLogger.Log("SERVER", "STOP", "", "SUCCESS");
                 Console.WriteLine("Remote services registered successfully.");
                 Console.WriteLine("Press Ctrl+C to stop the server.");
 

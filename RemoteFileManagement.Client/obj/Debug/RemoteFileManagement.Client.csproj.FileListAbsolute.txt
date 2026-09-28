@@ -1,0 +1,15 @@
+C:\DCS\RemoteFileManagement.Client\bin\Debug\Client.config
+C:\DCS\RemoteFileManagement.Client\bin\Debug\RemoteFileManagement.Client.exe
+C:\DCS\RemoteFileManagement.Client\bin\Debug\RemoteFileManagement.Client.pdb
+C:\DCS\RemoteFileManagement.Client\bin\Debug\RemoteFileManagement.Shared.dll
+C:\DCS\RemoteFileManagement.Client\bin\Debug\RemoteFileManagement.Shared.pdb
+C:\DCS\RemoteFileManagement.Client\obj\Debug\RemoteFileManagement.Client.exe
+C:\DCS\RemoteFileManagement.Client\obj\Debug\RemoteFileManagement.Client.pdb
+C:\DCS\RemoteFileManagement.Client\bin\Debug\Web\index.html
+C:\DCS\RemoteFileManagement.Client\bin\WebDebug\Web\index.html
+C:\DCS\RemoteFileManagement.Client\bin\WebDebug\Client.config
+C:\DCS\RemoteFileManagement.Client\bin\WebDebug\RemoteFileManagement.Client.exe
+C:\DCS\RemoteFileManagement.Client\bin\WebDebug\RemoteFileManagement.Client.pdb
+C:\DCS\RemoteFileManagement.Client\bin\WebDebug\RemoteFileManagement.Shared.dll
+C:\DCS\RemoteFileManagement.Client\bin\WebDebug\RemoteFileManagement.Shared.pdb
+C:\DCS\RemoteFileManagement.Client\obj\Debug\RemoteFileManagement.Client.csprojResolveAssemblyReference.cache
